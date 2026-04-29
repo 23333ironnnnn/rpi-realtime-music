@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>上传 MP3</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <main class="wrap">
+    <h1>上传 MP3</h1>
+    <p class="hint">选择文件后点击上传；需先在浏览器完成登录。</p>
+    <form
+      method="post"
+      action="{{ url_for('upload.upload') }}"
+      enctype="multipart/form-data"
+      id="upload-form"
+    >
+      <label class="file">
+        <span>选择文件</span>
+        <input type="file" name="file" accept="audio/mpeg,.mp3" required />
+      </label>
+      <button type="submit" id="btn">上传</button>
+    </form>
+    <p id="msg" class="msg" aria-live="polite"></p>
+  </main>
+  <script>
+    const form = document.getElementById("upload-form");
+    const btn = document.getElementById("btn");
+    const msg = document.getElementById("msg");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "";
+      btn.disabled = true;
+      const fd = new FormData(form);
+      try {
+        const res = await fetch(form.action, { method: "POST", body: fd, credentials: "include" });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          msg.textContent = "成功：" + (data.path || "") + "（" + (data.size || "") + " 字节）";
+        } else {
+          msg.textContent = "失败：" + (data.error || res.status);
+        }
+      } catch (err) {
+        msg.textContent = "网络错误";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

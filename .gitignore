@@ -1,0 +1,25 @@
+# secrets
+.env
+app/.env
+*.key
+*.pem
+*secret*
+*token*
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# runtime/output
+logs/
+realtime_pos/
+generated_mp3/
+inbox_mp3/
+
+# backups and archives
+backups/
+*.tar.gz
+
+# OS/editor
+.DS_Store

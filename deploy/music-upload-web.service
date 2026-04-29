@@ -1,0 +1,19 @@
+[Unit]
+Description=RPi realtime music — browser MP3 upload (Flask)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/rpi_realtime_music/app
+EnvironmentFile=-/opt/rpi_realtime_music/app/.env
+# PYTHONPATH must include this directory so `upload_web` imports resolve.
+Environment=PYTHONPATH=/opt/rpi_realtime_music/app
+ExecStart=/opt/rpi_realtime_music/app/.venv/bin/python -m upload_web.main
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,92 @@
+下面是根据你这份 PRD，推荐的项目文件/文件夹结构（按“代码”和“运行数据”分离，方便部署和维护）。
+
+推荐目录结构
+/opt/rpi_realtime_music/
+├── app/                              # 项目代码根目录（git 仓库）
+│   ├── README.md                     # 项目说明、快速启动
+│   ├── pyproject.toml                # Python 依赖与启动命令
+│   ├── .env.example                  # 环境变量模板
+│   ├── .env                          # 实际配置（API key、串口名、路径）
+│   ├── src/
+│   │   └── rpi_realtime_music/
+│   │       ├── main.py               # 主入口，拉起所有服务
+│   │       ├── config.py             # 配置加载与默认值
+│   │       ├── models.py             # 数据模型（任务、传感器样本）
+│   │       ├── services/
+│   │       │   ├── watcher.py        # 监听文件夹1新 MP3
+│   │       │   ├── sensors.py        # 呼吸心率/位置传感器采集
+│   │       │   ├── prompt_engine.py  # 生理窗口提取 + 提示词拼接
+│   │       │   ├── qwen_local.py     # 本地 Qwen 推理调用封装
+│   │       │   ├── minimax_client.py # MiniMax 生成音乐 API 封装
+│   │       │   ├── playback_router.py# 双声卡播放与音量映射
+│   │       │   ├── orchestrator.py   # 状态机编排（ANALYZE/GENERATE/PLAY）
+│   │       │   └── health.py         # /health 健康检查
+│   │       ├── utils/
+│   │       │   ├── io.py             # json/jsonl 读写、原子写入
+│   │       │   └── ring_buffer.py    # 生理窗口缓冲
+│   │       └── tools/
+│   │           ├── run_qwen_local.py # 本地 Qwen 服务启动工具
+│   │           └── __init__.py
+│   ├── scripts/
+│   │   ├── bootstrap_pi.sh           # 一键初始化树莓派环境
+│   │   ├── install_udev_rules.sh     # 安装串口固定别名规则
+│   │   └── mac_upload.sh             # Mac 侧 SCP 上传脚本
+│   ├── deploy/
+│   │   ├── 99-radar.rules            # udev 规则（固定 /dev/radar_*）
+│   │   └── rpi-realtime-music.service# systemd 服务文件
+│   └── docs/
+│       ├── IMPLEMENTATION_GUIDE.md   # 搭建步骤与联调说明
+│       ├── TEST_PLAN.md              # 测试用例（T1~T5）
+│       └── API_NOTES.md              # Qwen/MiniMax 接口说明
+│
+├── inbox_mp3/                        # 文件夹1：Mac SCP 上传入口
+├── realtime_bio/                     # 文件夹2：呼吸心率实时数据
+│   ├── current.json                  # 仅当前值（实时覆盖）
+│   └── ringbuffer.jsonl              # 最近 30~120 秒窗口
+├── realtime_pos/                     # 文件夹3：位置实时数据
+│   └── current.json                  # 仅当前坐标（实时覆盖）
+├── generated_mp3/                    # MiniMax 返回的音频结果
+├── prompts/                          # 每次任务的动态+固定提示词快照
+├── runtime/
+│   ├── state.json                    # 当前状态（WAIT/ANALYZE/...）
+│   ├── queue.jsonl                   # 可选：任务队列持久化
+│   └── pids/                         # 可选：进程 pid 文件
+└── logs/
+    ├── app.log                       # 主日志
+    ├── sensor_bio.log                # 生理采集日志
+    ├── sensor_pos.log                # 位置采集日志
+    ├── playback.log                  # 播放与音量控制日志
+    └── tasks/
+        └── <task_id>.json            # 单任务全链路追踪
+每个部分的作用（按你的链路）
+inbox_mp3/
+对应你的“文件夹1”，只负责接收新 mp3，不做复杂逻辑。
+realtime_bio/current.json
+你要求“只保留当下的呼吸心率值”，这个文件就是实时覆盖。
+realtime_bio/ringbuffer.jsonl
+虽然 current.json 只保留当前值，但为了“上传 mp3 时刻数据分析”，必须保留短窗口缓存。
+realtime_pos/current.json
+对应你的“文件夹3只保留实时坐标”，用于控音量。
+prompts/
+保存每次“Qwen 动态提示词 + 固定提示词”的最终文本，便于复盘和调参。
+generated_mp3/
+MiniMax 生成的结果统一落盘，按 task_id 命名方便追踪。
+services/orchestrator.py
+串起来完整业务流程：检测上传 -> 生理切片 -> 生成提示词 -> 调 MiniMax -> 播放。
+services/playback_router.py
+把坐标 x 映射成双声卡音量，完成“靠近哪个哪个大声”。
+deploy/rpi-realtime-music.service
+开机自动拉起系统，保证稳定运行。
+logs/tasks/<task_id>.json
+每个任务全链路记录，方便查“为什么某次生成慢/失败”。
+你可以直接创建的最小版本（先跑起来）
+如果你想快速验证，先只建这些就够：
+
+inbox_mp3/
+realtime_bio/current.json
+realtime_bio/ringbuffer.jsonl
+realtime_pos/current.json
+generated_mp3/
+prompts/
+logs/
+app/src/rpi_realtime_music/services/{watcher,sensors,prompt_engine,minimax_client,playback_router,orchestrator}.py

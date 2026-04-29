@@ -135,7 +135,81 @@ For demo and research use.
 用于演示与研究目的。
 
 
+——————————————————————————————————————————————————————————————————————————————————
 
 
+## Hardware Requirements / 硬件清单
 
+### A. Required Hardware / 必需硬件
+
+| Item | Minimum Spec | Qty | Notes |
+|---|---|---:|---|
+| Raspberry Pi | Raspberry Pi 5 (recommended 4GB/8GB RAM) | 1 | Main controller / 主控 |
+| Power Adapter | Official 5V 5A USB-C PSU | 1 | Stable power is critical / 建议官方电源 |
+| microSD Card | 32GB+ (Class 10/UHS-I) | 1 | OS + project files / 系统与项目存储 |
+| mmWave Sensor | R60AMP1 (UART output) | 1 | Realtime position data / 实时位置 |
+| USB-to-Serial Adapter | CH340/CP2102/FTDI (3.3V TTL) | 1 | Sensor UART to Pi USB |
+| USB Sound Card | Plug-and-play USB audio | 2 | Left/Right channel routing / 左右声道 |
+| Speakers / Amplifier | Active speakers or amp+speakers | 2 channels | For dual output demo / 双通道播放 |
+| Audio Cables | 3.5mm / RCA as needed | 2+ | Match your sound cards / 按声卡接口选 |
+
+### B. Optional but Recommended / 可选但推荐
+
+| Item | Purpose |
+|---|---|
+| Ethernet cable | More stable network during setup / 调试更稳定 |
+| USB powered hub | Avoid power drop on multiple USB devices / 多设备供电更稳 |
+| Cooling fan/case | Keep Pi 5 stable under long runs / 长时间运行更稳定 |
+| HDMI display + keyboard | Local debug convenience / 本地调试方便 |
+
+### C. Mobile Upload Side / 手机上传侧
+
+| Item | Requirement |
+|---|---|
+| Smartphone | iOS or Android, modern browser |
+| Network | Same hotspot/LAN as Raspberry Pi |
+| Browser | Safari/Chrome access to `http://<PI_IP>:8080/` |
+
+---
+
+## Hardware Connection / 硬件连接说明
+
+### 1) Sensor Wiring / 雷达接线
+- **R60AMP1 TX -> USB-UART RX**
+- **R60AMP1 RX -> USB-UART TX**
+- **GND -> GND**
+- **VCC -> Correct supply voltage per module datasheet**  
+  (Do not guess voltage; confirm from vendor docs.)  
+  （供电电压请按模块资料确认，勿凭经验乱接）
+
+### 2) USB Topology / USB 设备拓扑
+- USB Sound Card #1 -> playback left path  
+- USB Sound Card #2 -> playback right path  
+- USB-UART adapter (sensor) -> `/dev/ttyUSB*`
+
+### 3) Device Check Commands / 设备自检命令
+
+# Sound cards
+aplay -l
+
+# Serial devices
+ls -l /dev/ttyUSB* /dev/ttyACM* 2>/dev/null
+
+# Full demo preflight
+/opt/rpi_realtime_music/app/scripts/demo_preflight.sh
+
+Minimum Working Set / 最小可运行组合
+If you only want to verify upload + generation first:
+若你只想先验证“上传+生成”链路，最低配置：
+
+Raspberry Pi 5 + power + microSD
+Network connection
+One USB sound card (or no playback for pipeline-only test)
+MiniMax API key configured
+For full demo (position-driven dual-volume):
+若要完整演示“位置驱动双声道控音”：
+
+Add R60AMP1 + USB-UART adapter
+Use two USB sound cards
+Keep r60amp1-decode and dual-volume services active
 
